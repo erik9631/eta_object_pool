@@ -54,7 +54,6 @@ impl<ElementType> FixedPool<ElementType> {
 }
 
 impl<ElementType> Pool for FixedPool<ElementType> {
-    type Queue = crossbeam::queue::ArrayQueue<ElementType>;
     type Element = ElementType;
     type Proxy = PoolElement<ElementType, Self>;
 

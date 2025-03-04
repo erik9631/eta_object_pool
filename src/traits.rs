@@ -10,9 +10,8 @@ where Self: Drop
 }
 
 pub trait Pool {
-    type Queue;
     type Element;
-    type Proxy: PoolElementProxy<Element= Self::Element>;
+    type Proxy: PoolElementProxy<Element = Self::Element>;
     fn acquire(&self) -> Option<Self::Proxy>;
     fn push_element(&self, element: Self::Element) -> PoolError<()>;
     fn push_elements(&self, elements: Vec<Self::Element>) -> PoolError<()>;
