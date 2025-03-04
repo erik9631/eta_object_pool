@@ -1,37 +1,34 @@
 use crate::errors::PoolError;
 use crate::traits::{Pool, PoolElementProxy};
 
-pub struct PoolElement<ElementType, PoolType>
-where PoolType: Pool<Element = ElementType, Proxy = Self>
+pub struct ElementProxy<ElementType, PoolType>
+where PoolType: Pool<ElementType, Proxy = Self>
 {
     element: Option<ElementType>,
     pool_ptr: *const PoolType ,
 }
 
-impl<ElementType, PoolType> PoolElementProxy for PoolElement<ElementType, PoolType>
-where PoolType: Pool<Element = ElementType, Proxy = Self>
+impl<ElementType, PoolType> PoolElementProxy<ElementType> for ElementProxy<ElementType, PoolType>
+where PoolType: Pool<ElementType, Proxy = Self>
 {
-    type Element = ElementType;
     type Pool = PoolType;
-    fn new(element: Self::Element, pool_ref: &Self::Pool) -> Self {
+    fn new(element: ElementType, pool_ref: &Self::Pool) -> Self {
         Self {
             element: Some(element),
             pool_ptr: pool_ref
         }
     }
-
-    fn get(&self) -> &Self::Element {
+    fn get(&self) -> &ElementType {
         &self.element.as_ref().unwrap()
     }
-
-    fn get_mut(&mut self) -> &mut Self::Element {
+    fn get_mut(&mut self) -> &mut ElementType {
         let element_ref = self.element.as_mut().unwrap();
         element_ref
     }
 }
 
-impl<ElementType, PoolType> Drop for PoolElement<ElementType, PoolType>
-where PoolType: Pool<Element = ElementType, Proxy = Self>
+impl<ElementType, PoolType> Drop for ElementProxy<ElementType, PoolType>
+where PoolType: Pool<ElementType, Proxy = Self>
 {
     fn drop(&mut self) {
         let element = self.element.take().unwrap();
@@ -53,13 +50,12 @@ impl<ElementType> FixedPool<ElementType> {
     }
 }
 
-impl<ElementType> Pool for FixedPool<ElementType> {
-    type Element = ElementType;
-    type Proxy = PoolElement<ElementType, Self>;
+impl<ElementType> Pool<ElementType> for FixedPool<ElementType> {
+    type Proxy = ElementProxy<ElementType, Self>;
 
     fn acquire(&self) -> Option<Self::Proxy> {
         match self.item_pool.pop() {
-            Some(element) => Some(PoolElement::new(element, &self)),
+            Some(element) => Some(ElementProxy::new(element, &self)),
             None => None,
         }
     }
