@@ -1,0 +1,1 @@
+pub type PoolError<T> = Result<T, String>;

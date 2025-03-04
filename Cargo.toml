@@ -1,0 +1,14 @@
+[package]
+name = "eta_obj_pool"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "eta_obj_pool"
+path = "src/main.rs"
+
+[dependencies]
+crossbeam = "0.8.4"
