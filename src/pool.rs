@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use crate::errors::PoolError;
 use crate::traits::{Pool, PoolElementProxy};
 
@@ -5,17 +6,17 @@ pub struct ElementProxy<ElementType, PoolType>
 where PoolType: Pool<ElementType, Proxy = Self>
 {
     element: Option<ElementType>,
-    pool_ptr: *const PoolType ,
+    pool_ref: Arc<PoolType> ,
 }
 
 impl<ElementType, PoolType> PoolElementProxy<ElementType> for ElementProxy<ElementType, PoolType>
 where PoolType: Pool<ElementType, Proxy = Self>
 {
     type Pool = PoolType;
-    fn new(element: ElementType, pool_ref: &Self::Pool) -> Self {
+    fn new(element: ElementType, pool_ref: Arc<Self::Pool>) -> Self {
         Self {
             element: Some(element),
-            pool_ptr: pool_ref
+            pool_ref
         }
     }
     fn get(&self) -> &ElementType {
@@ -32,7 +33,7 @@ where PoolType: Pool<ElementType, Proxy = Self>
 {
     fn drop(&mut self) {
         let element = self.element.take().unwrap();
-        unsafe{(*self.pool_ptr).push_element(element).expect("Failed to push element")};
+        unsafe{(*self.pool_ref).release(element).expect("Failed to push element")};
     }
 }
 
@@ -42,33 +43,34 @@ pub struct FixedPool<ElementType> {
 }
 
 impl<ElementType> FixedPool<ElementType> {
-    pub fn new(items: Vec<ElementType>) -> PoolError<Self> {
+    pub fn new(items: Vec<ElementType>) -> PoolError<Arc<Self>> {
         let item_pool = crossbeam::queue::ArrayQueue::new(items.len());
         let pool = FixedPool { item_pool };
         pool.push_elements(items)?;
-        Ok(pool)
+        Ok(Arc::new(pool))
     }
 }
 
 impl<ElementType> Pool<ElementType> for FixedPool<ElementType> {
     type Proxy = ElementProxy<ElementType, Self>;
 
-    fn acquire(&self) -> Option<Self::Proxy> {
-        match self.item_pool.pop() {
-            Some(element) => Some(ElementProxy::new(element, &self)),
+    fn acquire(self_ref: Arc<Self>) -> Option<Self::Proxy> {
+        match self_ref.item_pool.pop() {
+            Some(element) => Some(ElementProxy::new(element, self_ref)),
             None => None,
         }
     }
-
-    fn push_element(&self, element: ElementType) -> PoolError<()> {
+    fn release(&self, element: ElementType) -> PoolError<()> {
         self.item_pool.push(element).map_err(|_| "Failed to push element".to_string())?;
         Ok(())
     }
-
     fn push_elements(&self, elements: Vec<ElementType>) -> PoolError<()> {
         for element in elements {
             self.item_pool.push(element).map_err(|_| "Failed to push element".to_string())?;
         }
         Ok(())
+    }
+    fn len(&self) -> usize {
+        self.item_pool.len()
     }
 }
