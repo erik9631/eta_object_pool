@@ -3,7 +3,7 @@ use std::thread::sleep;
 use eta_obj_pool::traits::{Pool, PoolElementProxy};
 
 #[test]
-fn sanity_test() {
+fn acquire_release() {
     let pool = match eta_obj_pool::pool::FixedPool::new(vec![1, 2, 3]) {
         Ok(pool) => pool,
         Err(e) => return assert!(false, "Failed to init pool {}", e),
@@ -16,7 +16,7 @@ fn sanity_test() {
     assert_eq!(pool.len(), 3, "Invalid pool len");
 }
 #[test]
-fn test_pool_empty() {
+fn pool_acquire_till_empty() {
     let pool = match eta_obj_pool::pool::FixedPool::new(vec![1, 2, 3]) {
         Ok(pool) => pool,
         Err(e) => return assert!(false, "Failed to init pool {}", e),
@@ -30,7 +30,7 @@ fn test_pool_empty() {
     assert_eq!(pool.len(), 3, "Invalid pool len");
 }
 #[test]
-fn test_pool_release_invalid() {
+fn pool_release_invalid() {
     let pool = match eta_obj_pool::pool::FixedPool::new(vec![1, 2, 3]) {
         Ok(pool) => pool,
         Err(e) => return assert!(false, "Failed to init pool {}", e),
@@ -43,7 +43,7 @@ fn test_pool_release_invalid() {
 }
 
 #[test]
-fn test_pool_release_parallel() {
+fn pool_release_parallel() {
     let pool = match eta_obj_pool::pool::FixedPool::new(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
         Ok(pool) => pool,
         Err(e) => return assert!(false, "Failed to init pool {}", e),

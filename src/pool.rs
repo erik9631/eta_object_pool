@@ -33,7 +33,7 @@ where PoolType: Pool<ElementType, Proxy = Self>
 {
     fn drop(&mut self) {
         let element = self.element.take().unwrap();
-        unsafe{(*self.pool_ref).release(element).expect("Failed to push element")};
+        self.pool_ref.release(element).expect("Failed to push element")
     }
 }
 
