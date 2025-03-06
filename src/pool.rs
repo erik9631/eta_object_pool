@@ -33,7 +33,44 @@ where PoolType: Pool<ElementType, Proxy = Self>
 {
     fn drop(&mut self) {
         let element = self.element.take().unwrap();
-        self.pool_ref.release(element).expect("Failed to push element")
+        self.pool_ref.push_element(element).expect("Failed to push element")
+    }
+}
+
+pub struct SegPool<ElementType> {
+    item_pool: crossbeam::queue::SegQueue<ElementType>,
+}
+
+impl<ElementType> SegPool<ElementType> {
+    pub fn new(items: Vec<ElementType>) -> PoolError<Arc<Self>> {
+        let item_pool = crossbeam::queue::SegQueue::new();
+        let pool = SegPool { item_pool };
+        pool.push_elements(items)?;
+        Ok(Arc::new(pool))
+    }
+}
+
+impl<ElementType> Pool<ElementType> for SegPool<ElementType> {
+    type Proxy = ElementProxy<ElementType, Self>;
+
+    fn acquire(self_ref: Arc<Self>) -> Option<Self::Proxy> {
+        match self_ref.item_pool.pop() {
+            Some(element) => Some(ElementProxy::new(element, self_ref)),
+            None => None,
+        }
+    }
+    fn push_element(&self, element: ElementType) -> PoolError<()> {
+        self.item_pool.push(element);
+        Ok(())
+    }
+    fn push_elements(&self, elements: Vec<ElementType>) -> PoolError<()> {
+        for element in elements {
+            self.item_pool.push(element);
+        }
+        Ok(())
+    }
+    fn len(&self) -> usize {
+        self.item_pool.len()
     }
 }
 
@@ -60,7 +97,7 @@ impl<ElementType> Pool<ElementType> for FixedPool<ElementType> {
             None => None,
         }
     }
-    fn release(&self, element: ElementType) -> PoolError<()> {
+    fn push_element(&self, element: ElementType) -> PoolError<()> {
         self.item_pool.push(element).map_err(|_| "Failed to push element".to_string())?;
         Ok(())
     }

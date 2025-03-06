@@ -12,7 +12,7 @@ where Self: Drop
 pub trait Pool<ElementType> {
     type Proxy: PoolElementProxy<ElementType>;
     fn acquire(self_ref: Arc<Self>) -> Option<Self::Proxy>;
-    fn release(&self, element: ElementType) -> PoolError<()>;
+    fn push_element(&self, element: ElementType) -> PoolError<()>;
     fn push_elements(&self, elements: Vec<ElementType>) -> PoolError<()>;
     fn len(&self) -> usize;
 }
