@@ -67,3 +67,17 @@ fn pool_release_parallel() {
     drop(pool);
     res.join().unwrap();
 }
+
+#[test]
+fn pool_forget() {
+    let pool = match eta_obj_pool::pool::FixedPool::new(vec![1, 2, 3]) {
+        Ok(pool) => pool,
+        Err(e) => return assert!(false, "Failed to init pool {}", e),
+    };
+    let val = Pool::acquire(pool.clone()).unwrap();
+    let inner = *val.get();
+    assert_eq!(pool.len(), 2, "Invalid pool len");
+    assert_eq!(inner, 1, "Failed to get element");
+    val.forget();
+    assert_eq!(pool.len(), 2, "Invalid pool len");
+}

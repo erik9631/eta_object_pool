@@ -7,6 +7,7 @@ where Self: Drop
     fn new(element: ElementType, pool: Arc<Self::Pool>) -> Self;
     fn get(&self) -> &ElementType;
     fn get_mut(&mut self) -> &mut ElementType;
+    fn forget(self);
 }
 
 pub trait Pool<ElementType> {

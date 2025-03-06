@@ -6,7 +6,8 @@ pub struct ElementProxy<ElementType, PoolType>
 where PoolType: Pool<ElementType, Proxy = Self>
 {
     element: Option<ElementType>,
-    pool_ref: Arc<PoolType> ,
+    pool_ref: Arc<PoolType>,
+    forget: bool,
 }
 
 impl<ElementType, PoolType> PoolElementProxy<ElementType> for ElementProxy<ElementType, PoolType>
@@ -16,7 +17,8 @@ where PoolType: Pool<ElementType, Proxy = Self>
     fn new(element: ElementType, pool_ref: Arc<Self::Pool>) -> Self {
         Self {
             element: Some(element),
-            pool_ref
+            pool_ref,
+            forget: false,
         }
     }
     fn get(&self) -> &ElementType {
@@ -26,6 +28,10 @@ where PoolType: Pool<ElementType, Proxy = Self>
         let element_ref = self.element.as_mut().unwrap();
         element_ref
     }
+    fn forget(mut self) {
+        self.forget = true;
+        drop(self);
+    }
 }
 
 impl<ElementType, PoolType> Drop for ElementProxy<ElementType, PoolType>
@@ -33,7 +39,9 @@ where PoolType: Pool<ElementType, Proxy = Self>
 {
     fn drop(&mut self) {
         let element = self.element.take().unwrap();
-        self.pool_ref.push_element(element).expect("Failed to push element")
+        if !self.forget {
+            self.pool_ref.push_element(element).expect("Failed to push element")
+        }
     }
 }
 

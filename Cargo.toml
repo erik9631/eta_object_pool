@@ -1,6 +1,6 @@
 [package]
 name = "eta_obj_pool"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 authors = ["erik9631@gmail.com"]
 description = "Thread safe object pool"
